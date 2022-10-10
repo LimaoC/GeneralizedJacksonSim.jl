@@ -83,25 +83,30 @@ function compute_ro(net::NetworkParameters)
     return λ./ net.μ_vector #this is the vector of ro values
 end
 
-
-## i believe the below code would have to be run for each scenario 1-4, and plots 
-x_coords=[] #i don't think i initialised these correctly
-y_coords=[]
-for x in 0.1:0.1:0.9 #not sure what intervals/ro values this needs to run for yet
-    adjusted_net = set_scenario(scenario3, x)
-    ro = compute_ro(adjusted_net)
-    mean_qs = ro ./ (1 .- ro)
-    total_mean_ro = sum(mean_qs) #### need to collect this point to plot once the for loop has run
-    push!(x_coords,x)
-    push!(y_coords,total_mean_ro)
+function plotting_ro(Scenario)
+    ## i believe the below code would have to be run for each scenario 1-4, and plot each one which is why i've put it in a function 
+    x_coords=Array{Float64}(undef, 9) #idk if i intiialised these correctly, also 9 would change depending on what interval you use
+    y_coords=Array{Float64}(undef, 9)
+    for (j,x) in enumerate(x for x in 0.1:0.1:0.9) #not sure what intervals/ro values this needs to run for yet
+        adjusted_net = set_scenario(Scenario, x)
+        ro = compute_ro(adjusted_net)
+        mean_qs = ro ./ (1 .- ro)
+        total_mean_ro = sum(mean_qs) #### need to collect this point to plot once the for loop has run
+        x_coords[j]=x
+        y_coords[j]=total_mean_ro
+        j=+1
+    end
+    @show x_coords
+    @show y_coords
+    return plot(x_coords,y_coords, ylabel="total steady state mean queue lengths", xlabel="p", title="$Scenario") #running into a problem with the title, can't get the scenario number e.g. scenario3 and instead get the data
+    # Plots.display(p1) #this was the only way i could get te graph to display idk why
 end
 
-p1 = plot(x_coords,y_coords)
-plot(p1)
-
-
-
-
+p1 = plotting_ro(scenario1)
+p2 = plotting_ro(scenario2)
+p3 = plotting_ro(scenario3)
+p4 = plotting_ro(scenario4)
+Plots.display(p1)
 
 
 # # @show P
