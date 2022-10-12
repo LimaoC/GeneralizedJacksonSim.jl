@@ -60,17 +60,18 @@ The time between external arrival events for a given server is exponentially dis
 and the service duration is gamma distributed.
 """
 function process_event(time::Float64, state::State, event::ExternalArrivalEvent)
-    state.queues[event.q] += 1  # add to queue
+    q = event.q
+    state.queues[q] += 1  # add to queue
     new_timed_events = TimedEvent[]
 
     # prepare next external arrival for this particular server
     push!(new_timed_events,
-          TimedEvent(ExternalArrivalEvent(q), time + next_arrival_time(state, event.q)))
+          TimedEvent(ExternalArrivalEvent(q), time + next_arrival_time(state, q)))
 
     # start serving this job if it is the only one in the queue
-    if state.queues[event.q] == 1
+    if state.queues[q] == 1
         push!(new_timed_events,
-              TimedEvent(EndOfServiceEvent(event.q), time + next_service_time(state, 1)))
+              TimedEvent(EndOfServiceEvent(q), time + next_service_time(state, q)))
     end
     return new_timed_events
 end
