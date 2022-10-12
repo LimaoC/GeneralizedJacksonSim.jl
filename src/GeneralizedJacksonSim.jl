@@ -29,10 +29,27 @@ function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
                  seed::Int64 = 42)::Float64
     Random.seed!(seed)
 
-    # create priority queue and add standard events
+    # create priority queue and add standard events; initial event is an external arrival
+    # at the first server
     priority_queue = BinaryMinHeap{TimedEvent}()
-    push!(priority_queue, TimedEvent(ArrivalEvent(), 0.0))
+    push!(priority_queue, TimedEvent(ExternalArrivalEvent(), 0.0))
     push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
+
+    state = QueueNetworkState(zeros(Int64, net.L), L, net)
+    time = 0.0
+
+    # simulation loop
+    while true
+        timed_event = pop!(priority_queue)
+        time = timed_event.time
+        new_timed_events = process_event(time, state, timed_event)
+
+        isa(timed_event.event, EndSimEvent) && break
+
+        for nte in new_timed_events
+            push!(priority_queue, nte)
+        end
+    end
 end
 
 end
