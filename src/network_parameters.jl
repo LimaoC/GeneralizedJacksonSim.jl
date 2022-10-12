@@ -10,7 +10,7 @@ This file contains the NetworkParameters implementation and related functionalit
 - `α_vector::Vector{Float64}`: the external arrival rates α_i >= 0
 - `μ_vector::Vector{Float64}`: the service rates μ_i > 0
 - `P::Matrix{Float64}`: the L×L routing matrix P
-- `cs::Float64`: squared coefficient of variation of the service processes, defaults to 1.0
+- `c_s::Float64`: squared coefficient of variation of the service processes, defaults to 1.0
 """
 @with_kw struct NetworkParameters
     L::Int
