@@ -8,58 +8,31 @@ using Accessors
 using LinearAlgebra
 using Random
 
-export NetworkParameters, maximal_alpha_scaling, set_scenario, compute_ρ
+include("network_parameters.jl")
+include("state.jl")
+include("event.jl")
+
+export NetworkParameters, compute_ρ
 
 """
-    NetworkParameters
+Runs a discrete event simulation of an Open Generalized Jackson Network `net`.
 
-# Fields
-- `L::Int`: the dimension of the network (number of nodes)
-- `α_vector::Vector{Float64}`: the external arrival rates α_i >= 0
-- `μ_vector::Vector{Float64}`: the service rates μ_i > 0
-- `P::Matrix{Float64}`: the L×L routing matrix P
-- `cs::Float64`: squared coefficient of variation of the service processes, defaults to 1.0
-"""
-@with_kw struct NetworkParameters
-    L::Int
-    α_vector::Vector{Float64}
-    μ_vector::Vector{Float64}
-    P::Matrix{Float64}
-    c_s::Float64 = 1.0
-end
+The simulation runs from time `0` to `max_time`.
 
-"""
-    maximal_alpha_scaling(net::NetworkParameters)
+Statistics about the total mean queue lengths are recorded from `warm_up_time` onwards
+and the estimated value is returned.
 
-Computes the maximal value by which we can scale the network's α_vector and be stable.
+This simulation does NOT keep individual customers' state, it only keeps the state which is
+the number of items in each of the nodes.
 """
-function maximal_alpha_scaling(net::NetworkParameters)
-    λ_base = (I - net.P') \ net.α_vector  # solve the traffic equations
-    ρ_base = λ_base ./ net.μ_vector  # determine the load ρ  
-    return minimum(1 ./ ρ_base)
-end
+function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
+                 seed::Int64 = 42)::Float64
+    Random.seed!(seed)
 
-"""
-    set_scenario(net::NetworkParameters, ρ::Float64, c_s::Float64 = 1.0)
-
-Adjusts the network parameters to the desired ρ⋆ and c_s.
-"""
-function set_scenario(net::NetworkParameters, ρ::Float64, c_s::Float64=1.0)
-    (ρ ≤ 0 || ρ ≥ 1) && error("ρ is out of range")
-    max_scaling = maximal_alpha_scaling(net)
-    net = @set net.α_vector = net.α_vector * max_scaling * ρ
-    net = @set net.c_s = c_s
-    return net
-end
-
-"""
-    compute_ρ(net::NetworkParameters)
-
-Computes the vector of ρ values.
-"""
-function compute_ρ(net::NetworkParameters)
-    λ = (I - net.P') \ net.α_vector  # solve traffic equations
-    return λ ./ net.μ_vector  # vector of ρ values
+    # create priority queue and add standard events
+    priority_queue = BinaryMinHeap{TimedEvent}()
+    push!(priority_queue, TimedEvent(ArrivalEvent(), 0.0))
+    push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
 end
 
 end
