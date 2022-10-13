@@ -3,16 +3,14 @@ A discrete event simulation engine for Open Generalized Jackson Networks.
 """
 module GeneralizedJacksonSim
 
-using Parameters
-using Accessors
-using LinearAlgebra
-using Random
+import Base: isless
+using Accessors, DataStructures, Distributions, StatsBase, Parameters, LinearAlgebra, Random
 
 include("network_parameters.jl")
 include("state.jl")
 include("event.jl")
 
-export NetworkParameters, compute_ρ
+export NetworkParameters, compute_ρ, set_scenario, sim_net
 
 """
 Runs a discrete event simulation of an Open Generalized Jackson Network `net`.
@@ -44,7 +42,7 @@ function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
     push!(priority_queue, TimedEvent(ExternalArrivalEvent(), 0.0))
     push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
 
-    state = QueueNetworkState(zeros(Int64, net.L), L, net)
+    state = QueueNetworkState(zeros(Int64, net.L), net.L, net)
     time = 0.0
 
     record_integral(time, state)
@@ -53,7 +51,7 @@ function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
     while true
         timed_event = pop!(priority_queue)
         time = timed_event.time
-        new_timed_events = process_event(time, state, timed_event)
+        new_timed_events = process_event(time, state, timed_event.event)
 
         isa(timed_event.event, EndSimEvent) && break
 

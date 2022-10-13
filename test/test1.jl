@@ -1,9 +1,10 @@
-using Pkg
-Pkg.activate(".")
-include("../src/GeneralizedJacksonSim.jl")
-include("../src/network_parameters.jl")
-include("../src/state.jl")
-include("../src/event.jl")
+# using Pkg
+# Pkg.activate(".")
+
+# include("../src/GeneralizedJacksonSim.jl")
+# using .GeneralizedJacksonSim
+
+# using Accessors, Random
 
 # Three queues in tandem
 scenario1 = NetworkParameters(L=3, 
@@ -60,9 +61,9 @@ function simulation_test(net::NetworkParameters, scenario_number::Int64)
                 title="Scenario $scenario_number, Absolute Error of SImulation")
 end
 
-simulation_test(scenario1, 1)
-simulation_test(scenario2, 2)
-simulation_test(scenario3, 3)
-simulation_test(scenario4, 4)
+p1 = simulation_test(scenario1, 1)
+p2 = simulation_test(scenario2, 2)
+p3 = simulation_test(scenario3, 3)
+p4 = simulation_test(scenario4, 4)
 
 plot(p1, p2, p3, p4, layout=(2, 2), legend=false, size=(800, 800))
