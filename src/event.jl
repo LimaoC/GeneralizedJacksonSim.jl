@@ -96,8 +96,8 @@ function process_event(time::Float64, state::State, event::EndOfServiceEvent)
     # the system
     L = state.net.L
     next_loc_weights = state.net.P[q, :]
-    push!(next_location_weights, 1 - sum(next_location_weights))
-    next_loc = sample(1:L+1, Weights(next_location_weights))
+    push!(next_loc_weights, 1 - sum(next_loc_weights))
+    next_loc = sample(1:L+1, Weights(next_loc_weights))
 
     if next_loc <= L
         # job is staying in the system
