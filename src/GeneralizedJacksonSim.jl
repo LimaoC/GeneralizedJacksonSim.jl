@@ -4,7 +4,7 @@ A discrete event simulation engine for Open Generalized Jackson Networks.
 module GeneralizedJacksonSim
 
 import Base: isless
-using Accessors, DataStructures, Distributions, StatsBase, Parameters, LinearAlgebra, Random
+using Accessors, DataStructures, Distributions, StatsBase, Parameters, LinearAlgebra, Random, Plots
 
 include("network_parameters.jl")
 include("state.jl")
@@ -65,4 +65,4 @@ function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
     return sum(queues_integral / max_time)
 end
 
-end
+end #end of module
