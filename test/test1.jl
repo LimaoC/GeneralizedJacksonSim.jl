@@ -50,7 +50,7 @@ function simulation_test(net::NetworkParameters, scenario_number::Int64)
                 absolute_relative_error,
                 xlabel="ρ",
                 ylabel="Absolute Error",
-                title="Scenario $scenario_number, Absolute Error of SImulation")
+                title="Absolute Error of Scenario $scenario_number,Simulation")
 end
 
 p1 = simulation_test(scenario1, 1)
