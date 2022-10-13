@@ -29,3 +29,27 @@ function compute_ρ(net::NetworkParameters)
     λ = (I - net.P') \ net.α_vector  # solve traffic equations
     return λ ./ net.μ_vector  # vector of ρ values
 end
+
+"""
+Computes the maximal value by which we can scale the network's α_vector and be stable.
+"""
+function maximal_alpha_scaling(net::NetworkParameters)
+    λ_base = (I - net.P') \ net.α_vector  # solve the traffic equations
+    ρ_base = λ_base ./ net.μ_vector  # determine the load ρ  
+    return minimum(1 ./ ρ_base)
+end
+
+
+
+"""
+    set_scenario(net::NetworkParameters, ρ::Float64, c_s::Float64 = 1.0)
+
+Adjusts the network parameters to the desired ρ⋆ and c_s.
+"""
+function set_scenario(net::NetworkParameters, ρ::Float64, c_s::Float64=1.0)
+    (ρ ≤ 0 || ρ ≥ 1) && error("ρ is out of range")
+    max_scaling = maximal_alpha_scaling(net)
+    net = @set net.α_vector = net.α_vector * max_scaling * ρ
+    net = @set net.c_s = c_s
+    return net
+end
