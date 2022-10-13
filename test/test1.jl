@@ -1,11 +1,3 @@
-# using Pkg
-# Pkg.activate(".")
-
-# include("../src/GeneralizedJacksonSim.jl")
-# using .GeneralizedJacksonSim
-
-# using Accessors, Random
-
 # Three queues in tandem
 scenario1 = NetworkParameters(L=3, 
                               α_vector = [0.5, 0, 0],
