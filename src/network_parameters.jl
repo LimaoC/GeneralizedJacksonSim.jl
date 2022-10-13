@@ -39,8 +39,6 @@ function maximal_alpha_scaling(net::NetworkParameters)
     return minimum(1 ./ ρ_base)
 end
 
-
-
 """
     set_scenario(net::NetworkParameters, ρ::Float64, c_s::Float64 = 1.0)
 

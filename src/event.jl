@@ -108,7 +108,8 @@ function process_event(time::Float64, state::State, event::EndOfServiceEvent)
         # start serving job if it is the only one in the queue
         if state.queues[next_loc] == 1
             push!(new_timed_events,
-                TimedEvent(EndOfServiceEvent(next_loc), time + next_service_time(state, next_loc)))
+                TimedEvent(EndOfServiceEvent(next_loc),
+                time + next_service_time(state, next_loc)))
         end
     end
     return new_timed_events

@@ -31,17 +31,20 @@ function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
     queues_integral = zeros(net.L)
     last_time = 0.0
 
+    """
+    Records the queue integral of the given state at the given point in time.
+    """
     function record_integral(time::Float64, state::State)
         (time >= warm_up_time) && (queues_integral += state.queues * (time - last_time))
         last_time = time
     end
 
-    # create priority queue and add standard events; initial event is an external arrival
-    # at the first server
+    # create priority queue and add standard events
     priority_queue = BinaryMinHeap{TimedEvent}()
     push!(priority_queue, TimedEvent(ExternalArrivalEvent(), 0.0))
     push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
 
+    # initialise state and time
     state = QueueNetworkState(zeros(Int64, net.L), net.L, net)
     time = 0.0
 
@@ -49,20 +52,23 @@ function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
 
     # simulation loop
     while true
+        # process the next upcoming event
         timed_event = pop!(priority_queue)
         time = timed_event.time
         new_timed_events = process_event(time, state, timed_event.event)
 
         isa(timed_event.event, EndSimEvent) && break
 
+        # add new spawned events to queue
         for nte in new_timed_events
             push!(priority_queue, nte)
         end
 
+        # record mean queue length
         record_integral(time, state)
     end
 
     return sum(queues_integral / max_time)
 end
 
-end #end of module
+end  # end of module
