@@ -43,7 +43,7 @@ function simulation_test(net::NetworkParameters, scenario_number::Int64)
     for (index,ρ_star) in enumerate(ρ_star_values)
         adjusted_net = set_scenario(net, ρ_star)  # adjust network parameters by this p*
         ρ = compute_ρ(adjusted_net)
-        absolute_relative_error[index] = abs((sum(ρ ./ (1 .- ρ))) - sim_net(adjusted_net))
+        absolute_relative_error[index] = abs((sum(ρ ./ (1 .- ρ))) - sim_net(adjusted_net, max_time = 10^3, warm_up_time = 10^1))
     end
 
     return plot(ρ_star_values,
