@@ -4,7 +4,8 @@ A discrete event simulation engine for Open Generalized Jackson Networks.
 module GeneralizedJacksonSim
 
 import Base: isless
-using Accessors, DataStructures, Distributions, StatsBase, Parameters, LinearAlgebra, Random, Plots
+using Accessors, DataStructures, Distributions, StatsBase, Parameters, LinearAlgebra,
+    Random, Plots
 
 include("network_parameters.jl")
 include("state.jl")
@@ -23,8 +24,8 @@ and the estimated value is returned.
 This simulation does NOT keep individual customers' state, it only keeps the state which is
 the number of items in each of the nodes.
 """
-function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
-                 seed::Int64 = 42)::Float64
+function sim_net(net::NetworkParameters;
+                 max_time=10^6, warm_up_time=10^4, seed::Int64=42)::Float64
     Random.seed!(seed)
 
     # create priority queue and add standard events

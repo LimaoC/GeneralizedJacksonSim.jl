@@ -14,9 +14,9 @@ abstract type State end
 - `net::NetworkParameters`: the parameters of the network
 """
 mutable struct QueueNetworkState <: State
-    queues::Vector{Int}  # a vector which indicates the number of customers in each queue
-    num_queues::Int  # this is the total of queues above (an INVARIANT in the system...)
-    net::NetworkParameters  # the parameters of the network (queueing system)
+    queues::Vector{Int}
+    num_queues::Int
+    net::NetworkParameters
 end
 
 """
