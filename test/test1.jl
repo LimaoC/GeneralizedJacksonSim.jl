@@ -43,56 +43,94 @@ scenario4 = NetworkParameters(
     μ_vector=0.5 .+ rand(L),
     P=P);
 
-function sim_test(net::NetworkParameters, scenario_number::Int64, max_time::Int = 10^3, warm_up_time::Int = 10)
-    ρ_star_values = 0.01:0.01:0.9
+function sim_test(net::NetworkParameters, scenario_number::Int64;
+                  max_time::Int = 10^6, warm_up_time::Int = 10^4, verbose::Bool = false,
+                  multithreaded::Bool = false)
+    ρ_star_values = 0.1:0.01:0.9
     simulated_total_mean_queue_lengths = zeros(length(ρ_star_values))
-    
-    for (index, ρ_star) in enumerate(ρ_star_values)
-        adjusted_net = set_scenario(net, ρ_star)  # adjust network parameters by this p*
-        simulated_total_mean_queue_lengths[index] = sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time) 
+    absolute_relative_errors = zeros(length(ρ_star_values))
+
+    if multithreaded
+        Threads.@threads for index in eachindex(ρ_star_values)
+            ρ_star = ρ_star_values[index]
+            verbose && println("Starting ρ* = $ρ_star in thread $(Threads.threadid())")
+
+            # adjust network parameters to suit this ρ*
+            adjusted_net = set_scenario(net, ρ_star)
+            ρ = compute_ρ(adjusted_net)
+
+            # calculate and simulate total mean queue lengths
+            theoretical = sum(ρ ./ (1 .- ρ))
+            simulated = sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time)
+
+            # save lengths to array
+            simulated_total_mean_queue_lengths[index] = simulated
+            absolute_relative_errors[index] = abs(theoretical - simulated) / theoretical
+
+            println("Done with ρ* = $ρ_star")
+        end
+    else
+        # single-thread
+        for (index, ρ_star) in enumerate(ρ_star_values)
+            println("Starting ρ* = $ρ_star")
+
+            # adjust network parameters to suit this ρ*
+            adjusted_net = set_scenario(net, ρ_star)
+            ρ = compute_ρ(adjusted_net)
+
+            # calculate and simulate total mean queue lengths
+            theoretical = sum(ρ ./ (1 .- ρ))
+            simulated = sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time)
+
+            # save lengths to array
+            simulated_total_mean_queue_lengths[index] = simulated
+            absolute_relative_errors[index] = abs(theoretical - simulated) / theoretical
+
+            println("Done with ρ* = $ρ_star")
+        end
     end
-    return plot(ρ_star_values,
-    simulated_total_mean_queue_lengths,
+
+    plot(
+        ρ_star_values,
+        simulated_total_mean_queue_lengths,
         xlabel="ρ",
         ylabel="Total Mean Queue Length",
-        title="Scenario $scenario_number, Simulation")
-end
-
-
-function sim_test_absolute_relative_error(net::NetworkParameters, scenario_number::Int64,
-                                          max_time::Int = 10^3, warm_up_time::Int = 10)
-    ρ_star_values = 0.01:0.01:0.9
-    absolute_relative_error = zeros(length(ρ_star_values))
-
-    for (index, ρ_star) in enumerate(ρ_star_values)
-        adjusted_net = set_scenario(net, ρ_star)  # adjust network parameters by this p*
-        ρ = compute_ρ(adjusted_net)
-
-        # calculate and simulate total mean queue lengths
-        theoretical = sum(ρ ./ (1 .- p))
-        simulated = sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time)
-        absolute_relative_error[index] = abs(theoretical - simulated ) / theoretical
-    end
-
-    return plot(ρ_star_values,
-        absolute_relative_error,
+        title="Scenario $scenario_number Simulation"
+    ), plot(
+        ρ_star_values,
+        absolute_relative_errors,
         xlabel="ρ",
-        ylabel="Absolute Error",
-        title="Absolute Error of Scenario $scenario_number, Simulation")
+        ylabel="Absolute Relative Error",
+        title="Absolute Relative Error of Scenario $scenario_number Simulation"
+    )
 end
 
-p1 = sim_test(scenario1, 1)
-p2 = sim_test(scenario2, 2)
-p3 = sim_test(scenario3, 3)
-p4 = sim_test(scenario4, 4)
+p1_sim, p1_err = sim_test(scenario1, 1, verbose=true, multithreaded=false)
+p2_sim, p2_err = sim_test(scenario2, 2, verbose=true, multithreaded=false)
+p3_sim, p3_err = sim_test(scenario2, 2, verbose=true, multithreaded=false)
+p4_sim, p4_err = sim_test(scenario2, 2, verbose=true, multithreaded=false)
+plot(
+    p1_sim, p1_err, p2_sim, p2_err, p3_sim, p3_err, p4_sim, p4_err,
+    layout=(4, 2), legend=false
+)
 
-plot(p1, p2, p3, p4, layout=(2, 2), legend=false, size=(800, 800))
+# Testing each scenario one at a time:
+# @time begin
+#     p1_sim, p1_err = sim_test(scenario1, 1, verbose=true, multithreaded=false)
+# end
+# plot(p1_sim, p1_err, layout=(2, 1), legend=false)
 
+# @time begin
+#     p2_sim, p2_err = sim_test(scenario2, 2, verbose=true, multithreaded=false)
+# end
+# plot(p2_sim, p2_err, layout=(2, 1), legend=false)
 
-# hold off from running this for a sec, I'm still refactoring this function
-# p5 = sim_test_absolute_relative_error(scenario1, 1)
-# p6 = sim_test_absolute_relative_error(scenario2, 2)
-# p7 = sim_test_absolute_relative_error(scenario3, 3)
-# p8 = sim_test_absolute_relative_error(scenario4, 4)
+# @time begin
+#     p3_sim, p3_err = sim_test(scenario3, 3, verbose=true, multithreaded=true)
+# end
+# plot(p3_sim, p3_err, layout=(2, 1), legend=false)
 
-# plot(p5, p6, p7, p8, layout=(2, 2), legend=false, size=(800, 800))
+# @time begin
+#     p4_sim, p4_err = sim_test(scenario4, 4, verbose=true, multithreaded=true)
+# end
+# plot(p4_sim, p4_err, layout=(2, 1), legend=false)

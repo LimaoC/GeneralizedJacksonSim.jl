@@ -10,7 +10,7 @@ include("network_parameters.jl")
 include("state.jl")
 include("event.jl")
 
-export NetworkParameters, compute_ρ, set_scenario, sim_net
+export NetworkParameters, compute_ρ, maximal_alpha_scaling, set_scenario, sim_net
 
 """
 Runs a discrete event simulation of an Open Generalized Jackson Network `net`.
@@ -27,6 +27,17 @@ function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
                  seed::Int64 = 42)::Float64
     Random.seed!(seed)
 
+    # create priority queue and add standard events
+    priority_queue = BinaryMinHeap{TimedEvent}()
+    for q in 1:net.L
+        push!(priority_queue, TimedEvent(ExternalArrivalEvent(q), 0.0))
+    end
+    push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
+
+    # initialise state and time
+    state = QueueNetworkState(zeros(Int64, net.L), net.L, net)
+    time = 0.0
+
     # set up queues integral for computing total mean queue length
     queues_integral = zeros(net.L)
     last_time = 0.0
@@ -38,15 +49,6 @@ function sim_net(net::NetworkParameters; max_time = 10^6, warm_up_time = 10^4,
         (time >= warm_up_time) && (queues_integral += state.queues * (time - last_time))
         last_time = time
     end
-
-    # create priority queue and add standard events
-    priority_queue = BinaryMinHeap{TimedEvent}()
-    push!(priority_queue, TimedEvent(ExternalArrivalEvent(), 0.0))
-    push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
-
-    # initialise state and time
-    state = QueueNetworkState(zeros(Int64, net.L), net.L, net)
-    time = 0.0
 
     record_integral(time, state)
 

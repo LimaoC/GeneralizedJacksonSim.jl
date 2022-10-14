@@ -89,8 +89,8 @@ function process_event(time::Float64, state::State, event::EndOfServiceEvent)
 
     # if there is another customer in the queue, start serving them
     if state.queues[q] > 0
-        push!(new_timed_events,
-            TimedEvent(EndOfServiceEvent(q), time + next_service_time(state, q)))
+        service_time = next_service_time(state, q)
+        push!(new_timed_events, TimedEvent(EndOfServiceEvent(q), time + service_time))
     end
 
     # simulate the next location for this job; indices 1:L are the probabilities of moving
@@ -99,6 +99,7 @@ function process_event(time::Float64, state::State, event::EndOfServiceEvent)
     L = state.net.L
     next_loc_weights = state.net.P[q, :]
     push!(next_loc_weights, 1 - sum(next_loc_weights))
+    @assert sum(next_loc_weights) == 1
     next_loc = sample(1:L+1, Weights(next_loc_weights))
 
     if next_loc <= L
@@ -107,9 +108,9 @@ function process_event(time::Float64, state::State, event::EndOfServiceEvent)
 
         # start serving job if it is the only one in the queue
         if state.queues[next_loc] == 1
+            service_time = next_service_time(state, next_loc)
             push!(new_timed_events,
-                TimedEvent(EndOfServiceEvent(next_loc),
-                time + next_service_time(state, next_loc)))
+                TimedEvent(EndOfServiceEvent(next_loc), time + service_time))
         end
     end
     return new_timed_events
