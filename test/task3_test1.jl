@@ -12,40 +12,23 @@ function test_sim(net::NetworkParameters, scenario_number::Int64;
     simulated_total_mean_queue_lengths = zeros(length(ρ_star_values))
     absolute_relative_errors = zeros(length(ρ_star_values))
 
-    if multithreaded
-        Threads.@threads for index in eachindex(ρ_star_values)
-            ρ_star = ρ_star_values[index]
-            verbose && println("Running ρ* = $ρ_star in thread $(Threads.threadid())")
+    Threads.@threads for index in eachindex(ρ_star_values)
+        ρ_star = ρ_star_values[index]
+        verbose && (multithreaded ?
+            println("Running ρ* = $ρ_star in thread $(Threads.threadid())") :
+            println("Running ρ* = $ρ_star"))
 
-            # adjust network parameters to suit this ρ*
-            adjusted_net = set_scenario(net, ρ_star)
-            ρ = compute_ρ(adjusted_net)
+        # adjust network parameters to suit this ρ*
+        adjusted_net = set_scenario(net, ρ_star)
+        ρ = compute_ρ(adjusted_net)
 
-            # calculate and simulate total mean queue lengths
-            theoretical = sum(ρ ./ (1 .- ρ))
-            simulated = sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time)
+        # calculate and simulate total mean queue lengths
+        theoretical = sum(ρ ./ (1 .- ρ))
+        simulated = sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time)
 
-            # save lengths to array
-            simulated_total_mean_queue_lengths[index] = simulated
-            absolute_relative_errors[index] = abs(theoretical - simulated) / theoretical
-        end
-    else
-        # single-thread
-        for (index, ρ_star) in enumerate(ρ_star_values)
-            verbose && println("Running ρ* = $ρ_star")
-
-            # adjust network parameters to suit this ρ*
-            adjusted_net = set_scenario(net, ρ_star)
-            ρ = compute_ρ(adjusted_net)
-
-            # calculate and simulate total mean queue lengths
-            theoretical = sum(ρ ./ (1 .- ρ))
-            simulated = sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time)
-
-            # save lengths to array
-            simulated_total_mean_queue_lengths[index] = simulated
-            absolute_relative_errors[index] = abs(theoretical - simulated) / theoretical
-        end
+        # save lengths to array
+        simulated_total_mean_queue_lengths[index] = simulated
+        absolute_relative_errors[index] = abs(theoretical - simulated) / theoretical
     end
 
     println("Scenario $scenario_number simulation done")
