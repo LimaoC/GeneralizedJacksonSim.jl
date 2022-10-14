@@ -44,7 +44,7 @@ scenario4 = NetworkParameters(
     P=P);
 
 function sim_test(net::NetworkParameters, scenario_number::Int64;
-                  max_time::Int = 10^6, warm_up_time::Int = 10^4, verbose::Bool = false,
+                  max_time::Int = 10^5, warm_up_time::Int = 10^3, verbose::Bool = false,
                   multithreaded::Bool = false)
     ρ_star_values = 0.1:0.01:0.9
     simulated_total_mean_queue_lengths = zeros(length(ρ_star_values))
@@ -100,37 +100,20 @@ function sim_test(net::NetworkParameters, scenario_number::Int64;
         ρ_star_values,
         absolute_relative_errors,
         xlabel="ρ",
-        ylabel="Absolute Relative Error",
-        title="Absolute Relative Error of Scenario $scenario_number Simulation"
+        ylabel="Abs. Rel. Error",
+        title="Abs. Rel. Error of Scenario $scenario_number Simulation"
     )
 end
 
-p1_sim, p1_err = sim_test(scenario1, 1, verbose=true, multithreaded=false)
-p2_sim, p2_err = sim_test(scenario2, 2, verbose=true, multithreaded=false)
-p3_sim, p3_err = sim_test(scenario2, 2, verbose=true, multithreaded=false)
-p4_sim, p4_err = sim_test(scenario2, 2, verbose=true, multithreaded=false)
+p1_sim, p1_err = sim_test(scenario1, 1, verbose=true, multithreaded=true)
+println("scenario1: done")
+p2_sim, p2_err = sim_test(scenario2, 2, verbose=true, multithreaded=true)
+println("scenario2: done")
+p3_sim, p3_err = sim_test(scenario3, 3, verbose=true, multithreaded=true)
+println("scenario3: done")
+p4_sim, p4_err = sim_test(scenario4, 4, verbose=true, multithreaded=true)
+println("scenario4: done")
 plot(
     p1_sim, p1_err, p2_sim, p2_err, p3_sim, p3_err, p4_sim, p4_err,
-    layout=(4, 2), legend=false
+    layout=(4, 2), legend=false, size=(1000, 1000)
 )
-
-# Testing each scenario one at a time:
-# @time begin
-#     p1_sim, p1_err = sim_test(scenario1, 1, verbose=true, multithreaded=false)
-# end
-# plot(p1_sim, p1_err, layout=(2, 1), legend=false)
-
-# @time begin
-#     p2_sim, p2_err = sim_test(scenario2, 2, verbose=true, multithreaded=false)
-# end
-# plot(p2_sim, p2_err, layout=(2, 1), legend=false)
-
-# @time begin
-#     p3_sim, p3_err = sim_test(scenario3, 3, verbose=true, multithreaded=true)
-# end
-# plot(p3_sim, p3_err, layout=(2, 1), legend=false)
-
-# @time begin
-#     p4_sim, p4_err = sim_test(scenario4, 4, verbose=true, multithreaded=true)
-# end
-# plot(p4_sim, p4_err, layout=(2, 1), legend=false)
