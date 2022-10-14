@@ -44,4 +44,4 @@ scenario4 = NetworkParameters(
     μ_vector=0.5 .+ rand(L),
     P=P);
 
-task3_test1([scenario1, scenario1, scenario1, scenario1], verbose=true, multithreaded=true)
+task3_test1([scenario1, scenario2, scenario3, scenario4], verbose=true, multithreaded=true)
