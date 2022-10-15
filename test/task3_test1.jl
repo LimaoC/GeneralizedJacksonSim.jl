@@ -5,12 +5,17 @@ varying ρ* values.
 """
 
 function test_sim(net::NetworkParameters, scenario_number::Int64;
-                  max_time::Int=10^5, warm_up_time::Int=10^3, verbose::Bool=false,
+                  max_times=[10^3, 10^4, 10^5],
+                  warm_up_times=[10, 10^2, 10^3],
+                  verbose::Bool=false,
                   multithreaded::Bool=false)
+    @assert length(max_times) == length(warm_up_times)
     println("Simulating scenario $scenario_number...")
     ρ_star_values = 0.1:0.01:0.9
-    simulated_total_mean_queue_lengths = zeros(length(ρ_star_values))
-    absolute_relative_errors = zeros(length(ρ_star_values))
+    simulated_total_mean_queue_lengths = Vector{Vector{Float64}}()
+    # simulated_total_mean_queue_lengths = zeros(length(ρ_star_values))
+    absolute_relative_errors = Vector{Vector{Float64}}()
+    # absolute_relative_errors = zeros(length(ρ_star_values))
 
     Threads.@threads for index in eachindex(ρ_star_values)
         ρ_star = ρ_star_values[index]
@@ -24,14 +29,25 @@ function test_sim(net::NetworkParameters, scenario_number::Int64;
 
         # calculate and simulate total mean queue lengths
         theoretical = sum(ρ ./ (1 .- ρ))
-        simulated = sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time)
+        simulated = Vector{Float64}()
+        for i in eachindex(max_times)
+            max_time, warm_up_time = max_times[i], warm_up_times[i]
+            push!(simulated, sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time))
+        end
+        # simulated = sim_net.((adjusted_net,), max_time=max_times, warm_up_time=warm_up_times)
 
         # save lengths to array
-        simulated_total_mean_queue_lengths[index] = simulated
-        absolute_relative_errors[index] = abs(theoretical - simulated) / theoretical
+        push!(simulated_total_mean_queue_lengths, simulated)
+        # simulated_total_mean_queue_lengths[index] = simulated
+        push!(absolute_relative_errors, abs.(theoretical .- simulated) ./ theoretical)
+        # absolute_relative_errors[index] = abs(theoretical .- simulated) ./ theoretical
     end
 
     println("Scenario $scenario_number simulation done")
+
+    # convert vector of vectors to matrix to be compatible with plot()
+    simulated_total_mean_queue_lengths = [arr[k] for k in 1:3, arr in simulated_total_mean_queue_lengths]'
+    absolute_relative_errors = [arr[k] for k in 1:3, arr in absolute_relative_errors]'
 
     return plot(
         ρ_star_values,
@@ -57,5 +73,5 @@ function task3_test1(scenarios::Vector{NetworkParameters};
                               verbose=verbose,
                               multithreaded=multithreaded)...)
     end
-    plot(plots..., layout=(length(scenarios), 2), legend=false, size=(1000, 1000))
+    plot(plots..., layout=(length(scenarios), 2), legend=true, size=(1000, 1000))
 end
