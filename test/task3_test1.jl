@@ -4,19 +4,35 @@ the theoretical total mean queue lengths - specifically, the absolute relative e
 varying ρ* values.
 """
 
+"""
+    test_sim(net::NetworkParameters, scenario_number::Int64; max_times::Vector{Int},
+             warm_up_times::Vector{Int}, verbose::Bool, multithreaded::Bool)
+
+Plots the simulated total mean queue length against the theoretical total mean queue
+length, as well as the absolute relative error between the two.
+"""
 function test_sim(net::NetworkParameters, scenario_number::Int64;
-                  max_times=[10^3, 10^4, 10^5],
-                  warm_up_times=[10, 10^2, 10^3],
+                  max_times::Vector{Int}=[10^3, 10^4, 10^5],
+                  warm_up_times::Vector{Int}=[10, 10^2, 10^3],
                   verbose::Bool=false,
                   multithreaded::Bool=false)
     @assert length(max_times) == length(warm_up_times)
-    println("Simulating scenario $scenario_number...")
-    ρ_star_values = 0.1:0.01:0.9
-    simulated_total_mean_queue_lengths = Vector{Vector{Float64}}()
-    # simulated_total_mean_queue_lengths = zeros(length(ρ_star_values))
-    absolute_relative_errors = Vector{Vector{Float64}}()
-    # absolute_relative_errors = zeros(length(ρ_star_values))
+    println("Simulating scenario $scenario_number...")    
 
+    # each element stores a vector of simulations for each max_time & warm_up_time pair
+    ρ_star_values = 0.1:0.01:0.9
+    sim_total_mean_lengths = Vector{Vector{Float64}}(undef, length(ρ_star_values))
+    abs_rel_errors = Vector{Vector{Float64}}(undef, length(ρ_star_values))
+
+    # we want to broadcast sim_net() for each max_time & warm_up_time pair, but keyword
+    # arguments can't be broadcasted, so a workaround is to wrap sim_net() with a function
+    # that doesn't have keyword arguments
+    # https://discourse.julialang.org/t/what-is-interaction-between-f-broadcasting-and-keyword-args/3648/6
+    function wrapped_sim_net(net, max_time, warm_up_time)
+        sim_net(net, max_time=max_time, warm_up_time=warm_up_time)
+    end
+
+    # calculate theoretical and simulated total mean queue lengths
     Threads.@threads for index in eachindex(ρ_star_values)
         ρ_star = ρ_star_values[index]
         verbose && (multithreaded ?
@@ -29,41 +45,43 @@ function test_sim(net::NetworkParameters, scenario_number::Int64;
 
         # calculate and simulate total mean queue lengths
         theoretical = sum(ρ ./ (1 .- ρ))
-        simulated = Vector{Float64}()
-        for i in eachindex(max_times)
-            max_time, warm_up_time = max_times[i], warm_up_times[i]
-            push!(simulated, sim_net(adjusted_net, max_time=max_time, warm_up_time=warm_up_time))
-        end
-        # simulated = sim_net.((adjusted_net,), max_time=max_times, warm_up_time=warm_up_times)
+        simulated = wrapped_sim_net.((adjusted_net,), max_times, warm_up_times)
 
         # save lengths to array
-        push!(simulated_total_mean_queue_lengths, simulated)
-        # simulated_total_mean_queue_lengths[index] = simulated
-        push!(absolute_relative_errors, abs.(theoretical .- simulated) ./ theoretical)
-        # absolute_relative_errors[index] = abs(theoretical .- simulated) ./ theoretical
+        sim_total_mean_lengths[index] = simulated
+        abs_rel_errors[index] = abs.(theoretical .- simulated) ./ theoretical
     end
 
     println("Scenario $scenario_number simulation done")
 
     # convert vector of vectors to matrix to be compatible with plot()
-    simulated_total_mean_queue_lengths = [arr[k] for k in 1:3, arr in simulated_total_mean_queue_lengths]'
-    absolute_relative_errors = [arr[k] for k in 1:3, arr in absolute_relative_errors]'
+    dim = length(max_times)
+    sim_total_mean_lengths = [arr[k] for k in 1:dim, arr in sim_total_mean_lengths]'
+    abs_rel_errors = [arr[k] for k in 1:dim, arr in abs_rel_errors]'
 
     return plot(
         ρ_star_values,
-        simulated_total_mean_queue_lengths,
+        sim_total_mean_lengths,
         xlabel="ρ",
         ylabel="Total Mean Queue Length",
+        labels=hcat("max_time: " .* string.(max_times)...),
         title="Scenario $scenario_number Simulation"
     ), plot(
         ρ_star_values,
-        absolute_relative_errors,
+        abs_rel_errors,
         xlabel="ρ",
         ylabel="Abs. Rel. Error",
+        labels=hcat("max_time: " .* string.(max_times)...),
         title="Abs. Rel. Error of Scenario $scenario_number Simulation"
     )
 end
 
+"""
+    task3_test1(scenarios::Vector{NetworkParameters}, verbose::Bool=false,
+                multithreaded=false)
+
+Runs test_sim() for each of the given scenarios.
+"""
 function task3_test1(scenarios::Vector{NetworkParameters};
                      verbose::Bool=false, multithreaded=false)
     plots = Vector()
