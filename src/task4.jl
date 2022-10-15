@@ -1,12 +1,12 @@
-using Pkg, Parameters, LinearAlgebra
+using Pkg, Parameters, LinearAlgebra, Plots
 Pkg.activate(".")
 
-include("network_parameters.jl")
-include("state.jl")
-include("event.jl")
-include("GeneralizedJacksonSim.jl")
+# include("network_parameters.jl")
+# include("state.jl")
+# include("event.jl")
+# include("GeneralizedJacksonSim.jl")
 
-# include("../simulation_script.jl")
+include("../simulation_script.jl")
 
 include("../test/scenarios.jl")
 
@@ -16,8 +16,7 @@ function plot_mean_queue_length_service_times(net::NetworkParameters, scenario_n
     ρ_star_values = 0.01:0.01:0.9
     simulated_total_mean_queue_lengths = zeros(length(ρ_star_values))
     service_time_values = [0.1,0.5,1.0,2.0,4.0]
-    plots_array = zeros(length(service_time_values))
-
+    plots = Vector()
 #forming data for each service time
     for (j,service_time) in enumerate(service_time_values)
         #forming data for each p*
@@ -29,17 +28,32 @@ function plot_mean_queue_length_service_times(net::NetworkParameters, scenario_n
             simulated_total_mean_queue_lengths[index] = simulated
         end
         #generating plot for each service time
-        p = plot(
+        push!(plots, plot(
             ρ_star_values,
             simulated_total_mean_queue_lengths,
             xlabel="ρ",
             ylabel="Total Mean Queue Length",
-            title="Scenario $scenario_number Simulation")
-        plots_array[j]=p
+            title="Scenario $scenario_number Simulation"))
     end
-    plot!(plots_array[1],plots_array[2],plots_array[3],plots_array[4],plots_array[5]) ##needs to combine all plots for service times from above onto one figure
+    # f = plot(plots[1])
+    # g = plot!(f,plots[2])
+
+    # return g
+    # return plot!(plots[1],plots[2],plots[3],plots[4],plots[5],legend=true, size=(1000, 1000))
+    # return plot(plots..., legend=true, size=(1000, 1000)) ##needs to combine all plots for service times from above onto one figure
     
     end
+
+    # plots = Vector()
+    # for (scenario_number, scenario) in enumerate(scenarios)
+    #     push!(plots, test_sim(scenario,
+    #                           scenario_number,
+    #                           verbose=verbose,
+    #                           multithreaded=multithreaded)...)
+    # end
+    # plot(plots..., layout=(length(scenarios), 2), legend=true, size=(1000, 1000))
+
+
 
 
 
