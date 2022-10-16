@@ -28,16 +28,17 @@ function sim_net(net::NetworkParameters;
                  max_time=10^6, warm_up_time=10^4, seed::Int64=42)::Float64
     Random.seed!(seed)
 
+    # initialise state and time
+    state = QueueNetworkState(zeros(Int64, net.L), zeros(Int64, net.L), net.L, net)
+    time = 0.0
+
     # create priority queue and add standard events
     priority_queue = BinaryMinHeap{TimedEvent}()
     for q in 1:net.L
-        push!(priority_queue, TimedEvent(ExternalArrivalEvent(q), 0.0))
+        push!(priority_queue,
+            TimedEvent(ExternalArrivalEvent(q), next_arrival_time(state, q)))
     end
     push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
-
-    # initialise state and time
-    state = QueueNetworkState(zeros(Int64, net.L), net.L, net)
-    time = 0.0
 
     # set up queues integral for computing total mean queue length
     queues_integral = zeros(net.L)
@@ -71,6 +72,9 @@ function sim_net(net::NetworkParameters;
         record_integral(time, state)
     end
 
+    println("$(state.arrivals)")
+    println("simulated: $(state.arrivals ./ max_time)")
+    println("theoretical: $((I - net.P') \ net.α_vector)")
     return sum(queues_integral / max_time)
 end
 

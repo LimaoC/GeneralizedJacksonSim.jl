@@ -57,6 +57,7 @@ and the service duration is gamma distributed.
 function process_event(time::Float64, state::State, event::ExternalArrivalEvent)
     q = event.q
     state.queues[q] += 1  # add to queue
+    state.arrivals[q] += 1  # record arrival
     new_timed_events = TimedEvent[]
 
     # prepare next external arrival for this particular server
@@ -103,8 +104,8 @@ function process_event(time::Float64, state::State, event::EndOfServiceEvent)
     next_loc = sample(1:L+1, Weights(next_loc_weights))
 
     if next_loc <= L
-        # job is staying in the system
-        state.queues[next_loc] += 1
+        state.queues[next_loc] += 1  # job is staying in the system
+        state.arrivals[next_loc] += 1  # record arrival
 
         # start serving job if it is the only one in the queue
         if state.queues[next_loc] == 1

@@ -10,11 +10,13 @@ abstract type State end
 
 # Fields
 - `queues::Vector{Int}`: vector of number of customers in each queue
+- `arrivals::Vector{Int}`: vector of number of arrivals to each queue
 - `num_queues::Int`: number of queues, equivalent to `length(queues)`
 - `net::NetworkParameters`: the parameters of the network
 """
 mutable struct QueueNetworkState <: State
     queues::Vector{Int}
+    arrivals::Vector{Int}
     num_queues::Int
     net::NetworkParameters
 end
@@ -27,7 +29,7 @@ rate_scv_gamma(rate::Float64, scv::Float64) = Gamma(1/scv, scv/rate)
 """
     next_arrival_time(s::State, q::Int)
 
-Generates the next arrival time for the `q`th server. The duration of time between
+Generates the next external arrival time for the `q`th server. The duration of time between
 external arrivals is exponentially distributed with mean 1 / s.net.α_vector[q].
 """
 next_arrival_time(s::State, q::Int) = rand(Exponential(1/s.net.α_vector[q]))
