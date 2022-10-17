@@ -8,11 +8,12 @@ using Accessors, DataStructures, Distributions, StatsBase, Parameters, LinearAlg
     Random, Plots
 
 include("network_parameters.jl")
+include("customer.jl")
 include("state.jl")
 include("event.jl")
 
-export NetworkParameters, QueueNetworkState, compute_ρ, maximal_alpha_scaling, set_scenario,
-    sim_net
+export NetworkParameters, QueueNetworkState, CustomerQueueNetworkState, sim_net,
+    sim_net_customers, compute_ρ, maximal_alpha_scaling, set_scenario
 
 """
 Runs a discrete event simulation of an Open Generalized Jackson Network `net`.
@@ -48,6 +49,71 @@ function sim_net(net::NetworkParameters;
     """
     function record_integral(time::Float64, state::State)
         (time >= warm_up_time) && (queues_integral += state.queues * (time - last_time))
+        last_time = time
+    end
+
+    record_integral(time, state)
+
+    # simulation loop
+    while true
+        # process the next upcoming event
+        timed_event = pop!(priority_queue)
+        time = timed_event.time
+        new_timed_events = process_event(time, state, timed_event.event)
+
+        # end sim if we've reached the EndOfSim event
+        isa(timed_event.event, EndSimEvent) && break
+
+        # add new spawned events to queue
+        for nte in new_timed_events
+            push!(priority_queue, nte)
+        end
+
+        # record mean queue length
+        record_integral(time, state)
+    end
+
+    return sum(queues_integral / max_time)
+end
+
+"""
+Runs a discrete event simulation of an Open Generalized Jackson Network `net`.
+
+The simulation runs from time `0` to `max_time`.
+
+Statistics about the total mean queue lengths are recorded from `warm_up_time` onwards
+and the estimated value is returned.
+
+This simulation keeps track of individual customer states - specifically, the time at which
+they enter the system and the time at which they exit.
+"""
+function sim_net_customers(net::NetworkParameters;
+                           state::State=CustomerQueueNetworkState(net),
+                           max_time::Int64=10^6, warm_up_time::Int64=10^4,
+                           seed::Int64=42)::Float64
+    Random.seed!(seed)
+
+    # create priority queue and add standard events
+    priority_queue = BinaryMinHeap{TimedEvent}()
+    for q in 1:net.L
+        push!(priority_queue,
+            TimedEvent(CustomerExternalArrivalEvent(q), next_arrival_time(state, q)))
+    end
+    push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
+
+    # set up queues integral for computing total mean queue length
+    queues_integral = zeros(net.L)
+    time = 0.0
+    last_time = 0.0
+
+    """
+    Records the queue integral of the given state at the given point in time.
+    """
+    function record_integral(time::Float64, state::State)
+        if time >= warm_up_time
+            queues_integral += (map((queue) -> length(queue), state.queues) *
+                (time - last_time))
+        end
         last_time = time
     end
 
