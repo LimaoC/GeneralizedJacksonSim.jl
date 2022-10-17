@@ -19,6 +19,11 @@ mutable struct QueueNetworkState <: State
     arrivals::Vector{Int}
     num_queues::Int
     net::NetworkParameters
+
+    # Inner constructor for a given scenario's parameters
+    function QueueNetworkState(net::NetworkParameters)
+        new(zeros(Int64, net.L), zeros(Int64, net.L), net.L, net)
+    end
 end
 
 """

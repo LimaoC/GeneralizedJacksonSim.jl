@@ -11,7 +11,8 @@ include("network_parameters.jl")
 include("state.jl")
 include("event.jl")
 
-export NetworkParameters, compute_ρ, maximal_alpha_scaling, set_scenario, sim_net
+export NetworkParameters, QueueNetworkState, compute_ρ, maximal_alpha_scaling, set_scenario,
+    sim_net
 
 """
 Runs a discrete event simulation of an Open Generalized Jackson Network `net`.
@@ -25,12 +26,9 @@ This simulation does NOT keep individual customers' state, it only keeps the sta
 the number of items in each of the nodes.
 """
 function sim_net(net::NetworkParameters;
-                 max_time=10^6, warm_up_time=10^4, seed::Int64=42)::Float64
+                 state::State=QueueNetworkState(net), max_time::Int64=10^6,
+                 warm_up_time::Int64=10^4, seed::Int64=42)::Float64
     Random.seed!(seed)
-
-    # initialise state and time
-    state = QueueNetworkState(zeros(Int64, net.L), zeros(Int64, net.L), net.L, net)
-    time = 0.0
 
     # create priority queue and add standard events
     priority_queue = BinaryMinHeap{TimedEvent}()
@@ -42,6 +40,7 @@ function sim_net(net::NetworkParameters;
 
     # set up queues integral for computing total mean queue length
     queues_integral = zeros(net.L)
+    time = 0.0
     last_time = 0.0
 
     """
@@ -61,6 +60,7 @@ function sim_net(net::NetworkParameters;
         time = timed_event.time
         new_timed_events = process_event(time, state, timed_event.event)
 
+        # end sim if we've reached the EndOfSim event
         isa(timed_event.event, EndSimEvent) && break
 
         # add new spawned events to queue
@@ -72,9 +72,6 @@ function sim_net(net::NetworkParameters;
         record_integral(time, state)
     end
 
-    println("$(state.arrivals)")
-    println("simulated: $(state.arrivals ./ max_time)")
-    println("theoretical: $((I - net.P') \ net.α_vector)")
     return sum(queues_integral / max_time)
 end
 
