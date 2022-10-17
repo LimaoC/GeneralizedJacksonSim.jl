@@ -6,14 +6,14 @@ This file contains the NetworkParameters implementation and related functionalit
     NetworkParameters
 
 # Fields
-- `L::Int`: the dimension of the network (number of nodes)
+- `L::Int64`: the dimension of the network (number of nodes)
 - `α_vector::Vector{Float64}`: the external arrival rates α_i >= 0
 - `μ_vector::Vector{Float64}`: the service rates μ_i > 0
 - `P::Matrix{Float64}`: the L×L routing matrix P
 - `c_s::Float64`: squared coefficient of variation of the service processes, defaults to 1.0
 """
 @with_kw struct NetworkParameters
-    L::Int
+    L::Int64
     α_vector::Vector{Float64}
     μ_vector::Vector{Float64}
     P::Matrix{Float64}

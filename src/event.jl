@@ -9,12 +9,12 @@ abstract type Event end
 An event that signifies an arrival from outside the system to the server `q`.
 """
 @with_kw struct ExternalArrivalEvent <: Event
-    q::Int = 1
+    q::Int64
 end
 
 """An event that signifies the end of a service at the `q`th server."""
 struct EndOfServiceEvent <: Event
-    q::Int
+    q::Int64
 end
 
 """An event that ends the simulation."""
