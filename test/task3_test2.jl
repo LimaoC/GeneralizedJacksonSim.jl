@@ -8,13 +8,19 @@ simulation, `sim_net()`, against the theoretical average number of arrivals.
                 digits::Int64=3)
 
 Prints the simulated average number of arrivals (rounded to `digits` decimal places) and
-the theoretical average number of arrivals.
+the theoretical average number of arrivals. If a scenario is unstable, it is adjusted to be
+stable by setting its ρ* to `ρ_star`.
 """
 function task3_test2(scenarios::Vector{NetworkParameters};
-                     max_time::Int64=10^5, digits::Int64=3,
+                     max_time::Int64=10^5, digits::Int64=3, ρ_star=0.8,
                      c_s_values::Vector{Float64}=[0.1, 0.5, 1.0, 2.0, 4.0])
     for (index, scenario) in enumerate(scenarios)
         println("Scenario $index:")
+        # make scenario stable if it is not stable
+        if maximum(compute_ρ(scenario)) > 1
+            scenario = set_scenario(scenario, ρ_star)
+        end
+
         for c_s in c_s_values
             println("   c_s = $c_s:")
             scenario = @set scenario.c_s = c_s
@@ -32,8 +38,7 @@ function task3_test2(scenarios::Vector{NetworkParameters};
                     "$(round.(mean_num_arrivals, digits=digits))")
             println("       Theoretical average number of arrivals: " *
                     "$(round.(theoretical_mean_num_arrivals, digits=digits))")
-            println("       Sum of squared differences            : " *
-                    "$(round.(sum_of_squares, digits=digits))")
+            println("       Sum of squared differences            : $sum_of_squares")
         end
     end
 end
