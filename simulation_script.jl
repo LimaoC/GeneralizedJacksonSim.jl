@@ -1,3 +1,6 @@
+using Pkg
+Pkg.activate(".")
+
 using Accessors, LinearAlgebra, StatsBase, Plots, Random
 
 include("src/GeneralizedJacksonSim.jl")
@@ -56,7 +59,7 @@ println("""Intuitively, the simulation should more closely align with the theore
         results the longer it runs. We can confirm this by observing the absolute relative
         error for different scenarios and different values of `max_time`:\n""")
 
-task3_test1([scenario1, scenario2, scenario3])
+display(task3_test1([scenario1, scenario2, scenario3]))
 
 println("""\nAnother quantity we may be interested in is the total (or mean) number of
         arrivals to any given node. Once again, we can obtain estimates by running the
