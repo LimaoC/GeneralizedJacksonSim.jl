@@ -79,6 +79,9 @@ task3_test2(scenarios)
 
 println("\n Task 4 plotted graphs for various service time values, and confidence bounds:")
 
+service_time_values = [0.1,0.5,1.0,2.0,4.0]
+scenarios = [scenario1, scenario2, scenario3, scenario4]
+
 #generates the y-values for each service time for each scenario
 function plot_mean_queue_length_service_times(net::NetworkParameters, scenario_number::Int64; max_time=10^3, warm_up_time=10)
         ρ_star_values = 0.01:0.01:0.9
@@ -139,38 +142,24 @@ function plot_mean_queue_length_service_times(net::NetworkParameters, scenario_n
     end
     
     #plotting initial servcice time graphs
-    p1 = plotting_service_times(scenario1, 1,)
-    p2 = plotting_service_times(scenario2, 2,)
-    p3 = plotting_service_times(scenario3, 3,)
-    p4 = plotting_service_times(scenario4, 4,)
-    
-    #plotting confidence bound graphs
-    #note that running all of these confidence bound calculations at once takes a very long time and it is more beneficial to run each scenario's set individually
-    p5 = confidence_bounds(scenario1, 1, 0.1)
-    p6 = confidence_bounds(scenario1, 1, 0.5)
-    p7 = confidence_bounds(scenario1, 1, 1.0)
-    p8 = confidence_bounds(scenario1, 1, 2.0)
-    p9 = confidence_bounds(scenario1, 1, 4.0)
-    p10 = confidence_bounds(scenario2, 2, 0.1)
-    p12 = confidence_bounds(scenario2, 2, 0.5)
-    p13 = confidence_bounds(scenario2, 2, 1.0)
-    p14 = confidence_bounds(scenario2, 2, 2.0)
-    p15 = confidence_bounds(scenario2, 2, 4.0)
-    p16 = confidence_bounds(scenario3, 3, 0.1)
-    p17 = confidence_bounds(scenario3, 3, 0.5) 
-    p18 = confidence_bounds(scenario3, 3, 1.0)
-    p19 = confidence_bounds(scenario3, 3, 2.0)
-    p20 = confidence_bounds(scenario3, 3, 4.0)
-    p21 = confidence_bounds(scenario4, 4, 0.1)
-    p22 = confidence_bounds(scenario4, 4, 0.5)
-    p23 = confidence_bounds(scenario4, 4, 1.0)
-    p24 = confidence_bounds(scenario4, 4, 2.0)
-    p25 = confidence_bounds(scenario4, 4, 4.0)
-    
-    
-display(plot(p1,p2,p3,p4, layout=(4, 1), legend=true, size=(900, 900)))
-    
-display(plot(p5,p6,p7,p8,p9,p10,p12,p13,p14,p15,p16,p17,p18,p19,p20,p21,p22,p23,p24,p25, layout=(19, 1), legend=true, size=(1100, 1100)))
+p1 = plotting_service_times(scenario1, 1,)
+p2 = plotting_service_times(scenario2, 2,)
+p3 = plotting_service_times(scenario3, 3,)
+p4 = plotting_service_times(scenario4, 4,)
+
+return plot(p1,p2,p3,p4, layout=(4, 1), legend=true, size=(900, 900))
+
+#plotting confidence bound graphs
+
+plots = Vector()
+for (index,scenario) in enumerate(scenarios)
+  for service_time in service_time_values
+    push!(plots, confidence_bounds(scenario, index, service_time))
+  end
+end
+return plot(plots..., layout=(19, 1), legend=true, size=(1100, 1100))
+
+return plot(p1,p2,p3,p4, layout=(4, 1), legend=true, size=(900, 900))
 
 println("\n Task 5:")
 # when running this in VSCode, use the "Julia: Execute active File in REPL" option or plots
