@@ -10,31 +10,6 @@ include("test/scenarios.jl")  # some example network parameters
 include("test/task3_test1.jl")
 include("test/task3_test2.jl")
 
-println("In answer to Task1:
-Features of amusement park that are not captured by model:
-- Amusement park attractions usually serve multiple people simultaneously, 
-whereas the model assumes jobs can only be serviced one at a time
-- People may cut in line and skip queues, so in reality it is not really a 
-queue in the first-in, first-out (FIFO) sense
-
-Model assumptions that are unrealistic for the application of a theme park:
-- Assuming that queues (and by extension the theme park) have infinite capacity
-- Assuming that people will unconditionally stay in a queue until they get to 
-the front of the line - they may leave because the queue is too long, they want to go to another attraction, etc.
-- Assuming that the time taken to move between attractions or leave the theme 
-park is instant, as travelling between attractions takes time
-- Service duration is independent from all other services - if people are at the 
-theme park together as a party (e.g. a family travelling around the theme park), 
-their service durations will not be independent from each other
-- Arrival of jobs to nodes is exponentially distributed - the arrival rate will 
-likely be higher during the day (more traffic) than in the evening, for example.
-
-If you were actually using this model to assess congestion at the park, would it be useful or not?
-While some model assumptions are unrealistic for application to a theme park, this 
-model would still be a good starting point for congestion estimation. If a theme park can withstand the congestion according 
-to this model it would be able to withstand realistic conjestion as many of the model assumptions 
-that are unrealistic put increased strain on the system.")
-
 println("\n Task 2 returns plots of theoretical mean queue length:")
 """
     plot_total_ss_mean_queue_length(net::NetworkParameters)
