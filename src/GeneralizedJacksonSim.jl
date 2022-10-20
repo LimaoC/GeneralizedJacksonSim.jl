@@ -34,8 +34,10 @@ function sim_net(net::NetworkParameters;
     # create priority queue and add standard events
     priority_queue = BinaryMinHeap{TimedEvent}()
     for q in 1:net.L
-        push!(priority_queue,
-            TimedEvent(ExternalArrivalEvent(q), next_arrival_time(state, q)))
+        if net.α_vector[q] > 0
+            push!(priority_queue,
+                TimedEvent(ExternalArrivalEvent(q), next_arrival_time(state, q)))
+        end
     end
     push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
 
@@ -61,6 +63,9 @@ function sim_net(net::NetworkParameters;
         time = timed_event.time
         new_timed_events = process_event(time, state, timed_event.event)
 
+        # record queue length
+        record_integral(time, state)
+
         # end sim if we've reached the EndOfSim event
         isa(timed_event.event, EndSimEvent) && break
 
@@ -68,12 +73,9 @@ function sim_net(net::NetworkParameters;
         for nte in new_timed_events
             push!(priority_queue, nte)
         end
-
-        # record mean queue length
-        record_integral(time, state)
     end
 
-    return sum(queues_integral / max_time)
+    return sum(queues_integral / (max_time - warm_up_time))
 end
 
 """
@@ -96,8 +98,10 @@ function sim_net_customers(net::NetworkParameters;
     # create priority queue and add standard events
     priority_queue = BinaryMinHeap{TimedEvent}()
     for q in 1:net.L
-        push!(priority_queue,
-            TimedEvent(CustomerExternalArrivalEvent(q), next_arrival_time(state, q)))
+        if net.α_vector[q] > 0
+            push!(priority_queue,
+                TimedEvent(CustomerExternalArrivalEvent(q), next_arrival_time(state, q)))
+        end
     end
     push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
 
@@ -126,6 +130,9 @@ function sim_net_customers(net::NetworkParameters;
         time = timed_event.time
         new_timed_events = process_event(time, state, timed_event.event)
 
+        # record mean queue length
+        record_integral(time, state)
+
         # end sim if we've reached the EndOfSim event
         isa(timed_event.event, EndSimEvent) && break
 
@@ -133,12 +140,9 @@ function sim_net_customers(net::NetworkParameters;
         for nte in new_timed_events
             push!(priority_queue, nte)
         end
-
-        # record mean queue length
-        record_integral(time, state)
     end
 
-    return sum(queues_integral / max_time)
+    return sum(queues_integral / (max_time - warm_up_time))
 end
 
 end  # end of module
