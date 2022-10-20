@@ -4,7 +4,7 @@ A discrete event simulation engine for Open Generalized Jackson Networks.
 module GeneralizedJacksonSim
 
 import Base: isless
-using Accessors, DataStructures, Distributions, StatsBase, Parameters, LinearAlgebra,
+using Accessors, DataStructures, Distributions, LinearAlgebra, Parameters, StatsBase,
     Random, Plots
 
 include("network_parameters.jl")
@@ -42,29 +42,33 @@ function sim_net(net::NetworkParameters;
     push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
 
     # set up queues integral for computing total mean queue length
-    queues_integral = zeros(net.L)
+    queues_integral = 0
+    queue_total = 0
     time = 0.0
     last_time = 0.0
 
     """
     Records the queue integral of the given state at the given point in time.
     """
-    function record_integral(time::Float64, state::State)
-        (time >= warm_up_time) && (queues_integral += state.queues * (time - last_time))
+    function record_integral(time::Float64)
+        if time >= warm_up_time
+            queues_integral += sum(queue_total * (time - last_time))
+        end
         last_time = time
     end
 
-    record_integral(time, state)
+    record_integral(time)
 
     # simulation loop
     while true
+        queue_total = sum(state.queues)
         # process the next upcoming event
         timed_event = pop!(priority_queue)
         time = timed_event.time
         new_timed_events = process_event(time, state, timed_event.event)
 
         # record queue length
-        record_integral(time, state)
+        record_integral(time)
 
         # end sim if we've reached the EndOfSim event
         isa(timed_event.event, EndSimEvent) && break
@@ -75,7 +79,7 @@ function sim_net(net::NetworkParameters;
         end
     end
 
-    return sum(queues_integral / (max_time - warm_up_time))
+    return queues_integral / (max_time - warm_up_time)
 end
 
 """
@@ -106,32 +110,35 @@ function sim_net_customers(net::NetworkParameters;
     push!(priority_queue, TimedEvent(EndSimEvent(), max_time))
 
     # set up queues integral for computing total mean queue length
-    queues_integral = zeros(net.L)
+    queues_integral = 0
+    queue_total = 0
     time = 0.0
     last_time = 0.0
 
     """
     Records the queue integral of the given state at the given point in time.
     """
-    function record_integral(time::Float64, state::State)
+    function record_integral(time::Float64)
         if time >= warm_up_time
-            queues_integral += (map((queue) -> length(queue), state.queues) *
-                (time - last_time))
+            queues_integral += sum(queue_total * (time - last_time))
+            # queues_integral += sum(map((queue) -> length(queue), state.queues) *
+            #     (time - last_time))
         end
         last_time = time
     end
 
-    record_integral(time, state)
+    record_integral(time)
 
     # simulation loop
     while true
+        queue_total = sum(map((queue) -> length(queue), state.queues))
         # process the next upcoming event
         timed_event = pop!(priority_queue)
         time = timed_event.time
         new_timed_events = process_event(time, state, timed_event.event)
 
         # record mean queue length
-        record_integral(time, state)
+        record_integral(time)
 
         # end sim if we've reached the EndOfSim event
         isa(timed_event.event, EndSimEvent) && break
@@ -142,7 +149,7 @@ function sim_net_customers(net::NetworkParameters;
         end
     end
 
-    return sum(queues_integral / (max_time - warm_up_time))
+    return queues_integral / (max_time - warm_up_time)
 end
 
 end  # end of module
