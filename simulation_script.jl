@@ -80,7 +80,8 @@ println("""
         TASK 4
         We can also vary the c_s value of the network, which is the squared coefficient of
         variation of the service processes. We expect that as c_s increases, the curve
-        increases as well:
+        increases as well: Note that this takes a while to run given that it generate 100 
+        points of data for each point for greater accuracy in the confidence bounds 
         """)
 
 c_s_values = [0.1,0.5,1.0,2.0,4.0]
